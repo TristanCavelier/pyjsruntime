@@ -3,18 +3,23 @@
 import threading
 import time
 
-"""TODO
+"""A Python module to code as in Javascript
 """
 
 class Script():
-    """TODO
+    """A useful event scheduler class managing event received by this or other
+    threads.
+
+    Each instance manages its own queue on its own thread, this thread will run
+    until the `quit` flag and an event is sent.
     """
 
     def __init__(self, name=None):
-        """TODO
+        """Initialize the instance with a name, if no name is given, then the
+        thread name will be generated automatically.
 
         Arguments:
-        - `name`:
+        - `name`: The script/thread name
         """
         self._name = name
         self._semaphore = threading.Semaphore()
