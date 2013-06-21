@@ -15,7 +15,6 @@ A python module to code as in javascript
 
         def four():
             print(4)
-            quit() # terminate this script after the current callback
 
         setTimeout(two, 1)
 
