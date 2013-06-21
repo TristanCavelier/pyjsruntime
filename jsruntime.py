@@ -30,9 +30,11 @@ def _quitScript(name):
     _scripts[name].quit()
     del _scripts[name]
 
-def quitScript():
+def quitScript(name=None):
+    if name is None:
+        name = threading.current_thread().name
     _semaphore.acquire()
-    _quitScript(threading.current_thread().name)
+    _quitScript(name)
     _semaphore.release()
 
 def _setTimeoutOn(name, callback, timeout=0):
