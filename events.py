@@ -14,16 +14,10 @@ emitted. These functions are called listeners.
 """
 
 import sys
-import threading
 
 class EventEmitter(object):
     """Inspired by nodejs EventEmitter class
     http://nodejs.org/api/events.html
-
-    When an EventEmitter instance experiences an error, the typical action is
-    to emit an 'error' event. Error events are treated as a special case in
-    node. If there is no listener for it, then the default action is to raise
-    the error again.
 
     All EventEmitters emit the event 'newListener' when new listeners are added
     and 'removeListener' when a listener is removed.
@@ -36,7 +30,7 @@ class EventEmitter(object):
         self._warned_events = {}
         self._max_listeners = 10
 
-    def on(self, event, listener):
+    def on(self, event, listener, original_listener=None):
         """Adds a listener to the end of the listeners array for the specified
         event.
 
@@ -50,10 +44,15 @@ class EventEmitter(object):
         - `listener`: The listener callback
         """
         self.emit("newListener", self, event, listener);
-        if self._events.get(event) is None:
-            self._events[event] = []
-        listener_list = self._events[event]
-        listener_list.append(listener)
+        if original_listener is None:
+            original_listener = listener
+        listener_list = self._events.get(event)
+        listener_dict = {"callback": listener, "listener": original_listener}
+        if listener_list is None:
+            self._events[event] = [listener_dict]
+            listener_list = self._events[event]
+        else:
+            listener_list.append(listener_dict);
         if self._max_listeners > 0 and \
            len(listener_list) > self._max_listeners and \
            self._warned_events.get(event) is not True:
@@ -64,14 +63,14 @@ class EventEmitter(object):
             self._warned_events[event] = True
         return self
 
-    def addListener(self, event, listener):
+    def addListener(self, *args, **kwargs):
         """Is equal to emitter.on method.
 
         Arguments:
         - `event`: The event name
         - `listener`: The listener callback
         """
-        return self.on(event, listener);
+        return self.on(*args, **kwargs);
 
     def once(self, event, listener):
         """Adds a one time listener for the vent. This listener is invoked only
@@ -89,9 +88,9 @@ class EventEmitter(object):
         - `listener`: The listener callback
         """
         def wrapper(*args, **kwargs):
-            callback(*args, **kwargs)
             self.removeListener(event, listener)
-        self.on(event, wrapper)
+            listener(*args, **kwargs)
+        self.on(event, wrapper, listener)
         return self
 
     def removeListener(self, event, listener):
@@ -110,10 +109,13 @@ class EventEmitter(object):
         - `event`: The event name
         - `listener`: The listener callback
         """
-        if self._events.get(event) is not None:
-            try: self._events[event].remove(listener)
-            except ValueError: pass
-            if self._events[event] == []:
+        listener_list = self._events.get(event);
+        if listener_list is not None:
+            for i in range(len(listener_list)):
+                if listener_list[i]['listener'] == listener:
+                    listener_list.pop(i)
+                    break
+            if listener_list == []:
                 del self._events[event]
                 try: del self._warned_events[event]
                 except KeyError: pass
@@ -166,8 +168,8 @@ class EventEmitter(object):
 
         listener_list = [x for x in self._events[event]]
 
-        for listener in listener_list:
-            listener(*args, **kwargs)
+        for listener_dict in listener_list:
+            listener_dict['callback'](*args, **kwargs)
 
         return True
 
@@ -184,7 +186,7 @@ class EventEmitter(object):
         Arguments:
         - `event`: The event name
         """
-        try: return self._events[event]
+        try: return [x['listener'] for x in self._events[event]]
         except KeyError: return []
 
     @staticmethod
