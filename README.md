@@ -4,7 +4,7 @@ A python module to code as in javascript
 
 ## Getting Started
 
-    from jsruntime import setScript, setTimeout, clearTimeout, quit
+    from jsruntime import setScript, setTimeout, clearTimeout
 
     def main_script():
         def two():
@@ -25,12 +25,31 @@ A python module to code as in javascript
 
         print(1)
 
-    setScript('MainScript', main_script) # run main_script in another thread
+    setTimeout(main_script) # run main_script in another thread
+
+## Use workers
+
+    from jsruntime import setScript, setTimeout, clearTimeout
+    from workers import Worker
+
+    def task(emitter):
+        def onMessage(emitter, message):
+            print("Worker recv:", message)
+            emitter.postMessage('Hello from worker!')
+        emitter.on('message', onMessage)
+
+    def main():
+        def onMessage(w, message):
+            print("Main recv:", message)
+        w = Worker(task)
+        w.on('message', onMessage)
+        w.postMessage('Hello from main!')
+        w.postMessage('Hello from main!')
+
+    setTimeout(main)
 
 ## API
 
-- `setScript(script name, function)`
-- `quit()`
 - `setTimeout(function, timeout=0) -> ident`
 - `clearTimeout(ident)`
 - `setInterval(function, interval=0) -> ident`
