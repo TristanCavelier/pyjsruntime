@@ -1,100 +1,326 @@
 # -*- coding: utf-8 -*-
 
-from script import Script
 import threading
 import time
+# import uuid
 
 """A Python module to code as in Javascript
 """
 
-_semaphore = threading.Semaphore()
-_scripts = {}
+class JSRuntime(object):
 
-def _setScript(name, callback):
-    if _scripts.get(name) is not None:
-        raise RuntimeError("The script '" + name + "' is already running")
-    s = Script(name)
-    _scripts[name] = s
-    s.add(callback)
-    return s._name
+    def __init__(self):
+        self._id = 1
+        self._lock = threading.Lock()
+        self._callbacks = {}
+        self._contexts = {}
 
-def setScript(name, callback):
-    _semaphore.acquire()
-    res = _setScript(name, callback)
-    _semaphore.release()
-    return res
+    def _nextId(self):
+        i, self._id = self._id, self._id + 1
+        return i
 
-def _quitScript(name):
-    if _scripts.get(name) is None:
-        return # or RuntimeError
-    _scripts[name].quit()
-    del _scripts[name]
+    def getThreadName(self):
+        return threading.current_thread().name.split('/')[0]
 
-def quitScript(name=None):
-    if name is None:
-        name = threading.current_thread().name
-    _semaphore.acquire()
-    _quitScript(name)
-    _semaphore.release()
+    def _call(self, i):
+        if self._callbacks.get(i) is not None:
+            c = self._callbacks[i]
+            if not c['keep']:
+                del self._callbacks[i]
+            self._lock.release()
+            c['callback']()
+            self._lock.acquire()
 
-def _setTimeoutOn(name, callback, timeout=0):
-    if _scripts.get(name) is None:
-        raise RuntimeError("The script '" + name +
-                           "' does not exist (anymore).")
-    while True:
-        try: return _scripts[name].add(callback, timeout)
-        except RuntimeError: pass
+    def _addCallback(self, callback, timer, keep=False):
+        i = self._nextId()
+        self._callbacks[i] = {
+            'callback': callback,
+            'keep': keep,
+            'timer': timer
+        }
+        return i
 
-def setTimeout(callback, timeout=0):
-    _semaphore.acquire()
-    res = _setTimeoutOn(threading.current_thread().name, callback, timeout)
-    _semaphore.release()
-    return res
+    def start(self, name=None):
+        if name is None:
+            name = self.getThreadName()
+        def loop():
+            self._lock.acquire()
+            while self._contexts[name] != []:
+                i = self._contexts[name].pop(0)
+                self._call(i)
+            del self._contexts[name]
+            self._lock.release()
+        threading.Thread(
+            target = loop,
+            name = name # + "/" + str(uuid.uuid4())
+        ).start()
 
-def _clearTimeoutOn(name, ident):
-    if _scripts.get(name) is None:
-        return
-    _scripts[name].remove(ident)
+    def setTimeout(self, callback, timeout=0):
+        return self.setTimeoutOn(self.getThreadName(), callback, timeout)
 
-def clearTimeout(ident):
-    _semaphore.acquire()
-    _clearTimeoutOn(threading.current_thread().name, ident)
-    _semaphore.release()
+    def setTimeoutOn(self, name, callback, timeout):
+        def operate():
+            self._lock.acquire()
+            if self._contexts.get(name) is not None: # if context exists
+                self._contexts[name].append(i)
+            else: # if context does not exist
+                if self._callbacks.get(i) is not None: # if the callback exists
+                    self._contexts[name] = [i]
+                    self.start(name)
+            self._lock.release()
+        timer = threading.Timer(
+            timeout if timeout >= 0 else 0,
+            operate
+        )
+        self._lock.acquire()
+        i = self._addCallback(callback, timer)
+        self._lock.release()
+        timer.start()
+        return i
 
-def _setIntervalOn(name, callback, timeout=0):
-    if _scripts.get(name) is None:
-        raise RuntimeError("The script '" + name +
-                           "' does not exist (anymore).")
-    try: return _scripts[name].add(callback, timeout, timeout)
-    except RuntimeError: pass
+    def clearTimeout(self, i):
+        self._lock.acquire()
+        if self._callbacks.get(i) is not None:
+            if self._callbacks[i]['timer'] is not None:
+                self._callbacks[i]['timer'].cancel()
+            del self._callbacks[i]
+        self._lock.release()
 
-def setInterval(callback, timeout=0):
-    _semaphore.acquire()
-    res = _setIntervalOn(
-        threading.current_thread().name, callback, timeout)
-    _semaphore.release()
-    return res
+    def setInterval(self, callback, interval=0):
+        return self.setIntervalOn(self.getThreadName(), callback, interval)
 
-def clearInterval(ident):
-    _semaphore.acquire()
-    _clearTimeoutOn(threading.current_thread().name, ident)
-    _semaphore.release()
+    def setIntervalOn(self, name, callback, interval):
+        def operate():
+            self._lock.acquire()
+            if self._contexts.get(name) is not None: # if context exists
+                self._contexts[name].append(i)
+            else: # if context does not exist
+                if self._callbacks.get(i) is not None: # if the callback exists
+                    self._contexts[name] = [i]
+                    self.start(name)
+            self._lock.release()
 
-def _setImmediateOn(name, callback, interval=0):
-    if _scripts.get(name) is None:
-        raise RuntimeError("The script '" + name +
-                           "' does not exist (anymore).")
-    try: return _scripts[name].add(callback, 0, interval)
-    except RuntimeError: pass
+        last = [time.time() + interval]
+        timer = threading.Timer(
+            interval if interval >= 0 else 0,
+            operate
+        )
 
-def setImmediate(callback, interval=0):
-    _semaphore.acquire()
-    res = _setImmediateOn(
-        threading.current_thread().name, callback, interval)
-    _semaphore.release()
-    return res
+        def wrapper():
+            self._lock.acquire()
+            if self._callbacks.get(i) is not None:
+                now = time.time()
+                timeout = interval - (now - last[0])
+                last[0] = now + (timeout % interval)
+                timer = threading.Timer(
+                    timeout if timeout >= 0 else 0,
+                    operate
+                )
+                self._callbacks[i]['timer'] = timer
+                timer.start()
+            self._lock.release()
+            callback()
 
-def clearImmediate(ident):
-    _semaphore.acquire()
-    _clearTimeoutOn(threading.current_thread().name, ident)
-    _semaphore.release()
+        self._lock.acquire()
+        i = self._addCallback(wrapper, timer, keep=True)
+        self._lock.release()
+        timer.start()
+        return i
+
+    def clearInterval(self, i):
+        return self.clearTimeout(i) # XXX
+
+    def setImmediate(self, callback, interval=0):
+        return self.setImmediateOn(self.getThreadName(), callback, interval)
+
+    def setImmediateOn(self, name, callback, interval):
+        def operate():
+            self._lock.acquire()
+            if self._contexts.get(name) is not None: # if context exists
+                self._contexts[name].append(i)
+            else: # if context does not exist
+                if self._callbacks.get(i) is not None: # if the callback exists
+                    self._contexts[name] = [i]
+                    self.start(name)
+            self._lock.release()
+
+        last = [time.time()]
+        timer = threading.Timer(
+            0,
+            operate
+        )
+
+        def wrapper():
+            self._lock.acquire()
+            if self._callbacks.get(i) is not None:
+                now = time.time()
+                timeout = interval - (now - last[0])
+                last[0] = now + (timeout % interval)
+                timer = threading.Timer(
+                    timeout if timeout >= 0 else 0,
+                    operate
+                )
+                self._callbacks[i]['timer'] = timer
+                timer.start()
+            self._lock.release()
+            callback()
+
+        self._lock.acquire()
+        i = self._addCallback(wrapper, timer, keep=True)
+        self._lock.release()
+        timer.start()
+        return i
+
+    def clearImmediate(self, i):
+        return self.clearTimeout(i) # XXX
+
+    ############################################################################
+    # # Not OK
+
+    # def call(self, i, keep=False):
+    #     self._lock.acquire()
+    #     if self._callbacks.get(i) is not None:
+    #         if keep:
+    #             c = self._callback[i]
+    #         else:
+    #             c = self._callbacks.pop(i)
+    #         self._lock.release()
+    #         c()
+    #     else:
+    #         self._lock.release()
+
+    # def run(self, callback):
+    #     emitter_name = self.getEmitterName()
+    #     self._lock.acquire()
+    #     if self._contexts.get(emitter_name) is None:
+    #         self._contexts[emitter_name] = events.SafeEventEmitter(emitter_name)
+    #         self._contexts[emitter_name].on('call', self.call)
+    #     i = self.nextId()
+    #     self._callbacks[i] = callback
+    #     self._lock.release()
+    #     self._contexts[emitter_name].emit('call', i)
+
+    # def setTimeout(self, callback, timeout=0):
+    #     emitter_name = self.getEmitterName()
+    #     return self.setTimeoutOn(emitter_name, callback, timeout)
+
+    # def setTimeoutOn(self, name, callback, timeout):
+    #     self._lock.acquire()
+    #     i = self.nextId()
+    #     self._callbacks[i] = callback
+    #     self._lock.release()
+    #     if timeout >= 0:
+    #         threading.Timer(
+    #             timeout if timeout >= 0 else 0,
+    #             lambda: self._contexts[name].emitAsync('call', i)
+    #         ).start()
+    #     else:
+    #         self._contexts[name].emitAsync('call', i)
+    #     return i
+
+    # def clearTimeout(self, i):
+    #     del self._callbacks[i]
+
+    ############################################################################
+    # # OK
+
+    # def call(self, name, i, keep=False):
+    #     self._contexts[name].acquire()
+    #     self._lock.acquire()
+    #     if self._callbacks.get(i) is not None:
+    #         if keep:
+    #             c = self._callback[i]
+    #         else:
+    #             c = self._callbacks.pop(i)
+    #         self._lock.release()
+    #         c()
+    #     else:
+    #         self._lock.release()
+    #     self._contexts[name].release()
+
+    # def run(self, callback):
+    #     name = self.getThreadName()
+    #     self._lock.acquire()
+    #     if self._contexts.get(name) is None:
+    #         self._contexts[name] = threading.Lock()
+    #     i = self.nextId()
+    #     self._callbacks[i] = callback
+    #     self._lock.release()
+    #     self.call(name, i)
+
+    # def setTimeout(self, callback, timeout=0):
+    #     return self.setTimeoutOn(self.getThreadName(), callback, timeout)
+
+    # def setTimeoutOn(self, name, callback, timeout):
+    #     self._lock.acquire()
+    #     i = self.nextId()
+    #     self._callbacks[i] = callback
+    #     self._lock.release()
+    #     def timeoutCall():
+    #         time.sleep(timeout if timeout >= 0 else 0)
+    #         self.call(name, i)
+    #     threading.Thread(
+    #         target = timeoutCall,
+    #         name = name + "/" + str(uuid.uuid4())
+    #     ).start()
+    #     return i
+
+    # def clearTimeout(self, i):
+    #     del self._callbacks[i]
+
+try: setTimeout
+except NameError:
+    _runtime = JSRuntime()
+    setTimeout = _runtime.setTimeout
+    clearTimeout = _runtime.clearTimeout
+    setInterval = _runtime.setInterval
+    clearInterval = _runtime.clearInterval
+    setImmediate = _runtime.setImmediate
+    clearImmediate = _runtime.clearImmediate
+    del _runtime
+
+# if __name__ == '__main__':
+#     def tprint(*args):
+#         print(threading.current_thread().name, *args)
+#     # def begin():
+#     #     tprint('begin')
+#     #     def a():
+#     #         tprint('a')
+#     #         setTimeout(b, 1)
+#     #         time.sleep(1)
+#     #         i = setTimeout(b)
+#     #         clearTimeout(i)
+#     #         tprint('enda')
+#     #     def b():
+#     #         tprint('b')
+#     #         time.sleep(1)
+#     #         tprint('endb')
+#     #     setTimeout(a, 1)
+#     #     tprint('setTimeout')
+#     # setTimeout(begin)
+#     # tprint('end')
+
+#     def begin():
+#         tprint('begin')
+#         i = [0]
+#         def a():
+#             tprint('a')
+#             i[0] = setImmediate(b, 2)
+#         def b():
+#             tprint('b')
+#             time.sleep(1)
+#             tprint('endb')
+#         def c():
+#             clearImmediate(i[0])
+#         setTimeout(a, 1)
+#         setTimeout(c, 9)
+#         tprint('setTimeout')
+#         # threading.Timer(
+#         #     10,
+#         #     lambda: threading.Thread(
+#         #         target=lambda: setTimeout(a),
+#         #         name='MainThread'
+#         #     ).start()
+#         # ).start()
+#     setTimeout(begin)
+#     tprint('end')
