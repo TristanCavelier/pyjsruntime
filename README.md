@@ -29,7 +29,7 @@ A python module to code as in javascript
 
 ## Use workers
 
-    from jsruntime import setScript, setTimeout, clearTimeout
+    from jsruntime import setTimeout, clearTimeout
     from workers import Worker
 
     def task(emitter):
@@ -46,6 +46,36 @@ A python module to code as in javascript
         w.postMessage('Hello from main!')
         w.postMessage('Hello from main!')
 
+    setTimeout(main)
+
+## Use promises
+
+    from jsruntime import setTimeout, setInterval, clearInterval
+    from workers import Worker
+    from promises import Deferred
+
+    """Show dots every second. A worker waits for something typed and resolve
+    the promise with it. The typed message is shown and dots stop.
+    """
+
+    def promised_input():
+        deferred = Deferred()
+        def task(emitter):
+            emitter.postMessage(input())
+        def onMessage(emitter, message):
+            deferred.resolve(message)
+        w = Worker(task)
+        w.on('message', onMessage)
+        return deferred.promise()
+
+    def main():
+        def show_input_and_stop_dots(message):
+            print(message)
+            clearInterval(i)
+        def show_activity():
+            print('.')
+        promised_input().then(show_input_and_stop_dots)
+        i = setInterval(show_activity, 1)
     setTimeout(main)
 
 ## API
