@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from jsruntime import setImmediate, clearImmediate, setScript
+from jsruntime import setTimeout, setImmediate, clearImmediate
 
 import time
 import threading
@@ -31,4 +31,4 @@ if __name__ == '__main__':
             else:
                 clearImmediate(b)
         b = setImmediate(a, 1)
-    setScript(__name__, w)
+    setTimeout(w)

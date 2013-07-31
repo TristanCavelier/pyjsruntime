@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from jsruntime import setInterval, clearInterval, setScript
+from jsruntime import setTimeout, setInterval, clearInterval
 
 import time
 import threading
@@ -34,4 +34,4 @@ if __name__ == '__main__':
             else:
                 clearInterval(b)
         b = setInterval(a, 1)
-    setScript(__name__, w)
+    setTimeout(w)

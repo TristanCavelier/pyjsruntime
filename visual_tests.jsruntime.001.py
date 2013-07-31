@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from jsruntime import setTimeout, clearTimeout, setScript
+from jsruntime import setTimeout, clearTimeout
 
 import time
 import threading
@@ -32,4 +32,4 @@ if __name__ == '__main__':
             clearTimeout(i[0])
         setTimeout(b, 1.5)
         a()
-    setScript(__name__, w)
+    setTimeout(w)
