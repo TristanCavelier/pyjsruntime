@@ -4,9 +4,9 @@ A python module to code as in javascript
 
 ## Getting Started
 
-    from jsruntime import setScript, setTimeout, clearTimeout
+    from jsruntime import setTimeout, clearTimeout
 
-    def main_script():
+    def main():
         def two():
             print(2)
 
@@ -25,7 +25,7 @@ A python module to code as in javascript
 
         print(1)
 
-    setTimeout(main_script) # run main_script in another thread
+    setTimeout(main) # run main in another thread
 
 ## Use workers
 
