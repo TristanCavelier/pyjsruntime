@@ -19,95 +19,100 @@ class Promise(object):
         self._onResolve = []
         self._onProgress = []
         self._state = ""
-        self._answer = None
+        self._answers = None
+        self._kwanswers = None
 
-    @staticmethod
-    def createSolver(promise):
-        def resolve(answer=None):
-            if promise._state != "resolved" and promise._state != "rejected":
-                promise._state = "resolved"
-                promise._answer = answer
-                def each(callback, i):
-                    def wrapper():
-                        callback(answer)
-                    setTimeout(wrapper)
-                _forEach(promise._onResolve, each)
-                promise._onResolve = []
-                promise._onReject = []
-                promise._onProgress = []
-        def reject(answer=None):
-            if promise._state != "resolved" and promise._state != "rejected":
-                promise._state = "rejected"
-                promise._answer = answer
-                def each(callback, i):
-                    def wrapper():
-                        callback(answer)
-                    setTimeout(wrapper)
-                _forEach(promise._onReject, each)
-                promise._onResolve = []
-                promise._onReject = []
-                promise._onProgress = []
-        def notify(answer=None):
-            def each(callback, i):
-                def wrapper():
-                    callback(answer)
-                setTimeout(wrapper)
-            _forEach(promise._onProgress, each)
-
-        solver = Solver(resolve, reject, notify)
-        return solver
-
-    def solver(self):
+    def solver(self, callback=None):
         if self._state == "running":
             raise EnvironmentError("Promise().execute(): Already running")
         elif self._state == "resolved":
             raise EnvironmentError("Promise().execute(): Resolved");
         elif self._state == "rejected":
             raise EnvironmentError("Promise().execute(): Rejected");
+        def createSolver(promise):
+            def resolve(*args, **kw):
+                if promise._state != "resolved" and \
+                   promise._state != "rejected":
+                    promise._state = "resolved"
+                    promise._answers = args
+                    promise._kwanswers = kw
+                    _forEach(
+                        promise._onResolve,
+                        lambda callback, i: \
+                        setTimeout(lambda: callback(
+                            *promise._answers,
+                            **promise._kwanswers
+                        ))
+                    )
+                    promise._onResolve = []
+                    promise._onReject = []
+                    promise._onProgress = []
+            def reject(*args, **kw):
+                if promise._state != "resolved" and \
+                   promise._state != "rejected":
+                    promise._state = "reject"
+                    promise._answers = args
+                    promise._kwanswers = kw
+                    _forEach(
+                        promise._onReject,
+                        lambda callback, i: \
+                        setTimeout(lambda: callback(
+                            *promise._answers,
+                            **promise._kwanswers
+                        ))
+                    )
+                    promise._onResolve = []
+                    promise._onReject = []
+                    promise._onProgress = []
+            def notify(*args, **kw):
+                _forEach(
+                    promise._onProgress,
+                    lambda callback, i: \
+                    setTimeout(lambda: callback(*args, **kw))
+                )
+            return Solver(resolve, reject, notify)
         self._state = "running"
-        return Promise.createSolver(self);
-
-    def execute(self, callback):
-        if self._state == "running":
-            raise EnvironmentError("Promise().execute(): Already running")
-        elif self._state == "resolved":
-            raise EnvironmentError("Promise().execute(): Resolved");
-        elif self._state == "rejected":
-            raise EnvironmentError("Promise().execute(): Rejected");
-        self._state = "running"
-        def wrapper():
-            callback(Promise.createSolver(self))
-        setTimeout(wrapper)
-        return self
+        if str(type(callback)) == "<class 'function'>":
+            setTimeout(lambda: callback(createSolver(self)))
+            return self
+        return createSolver(self)
 
     def then(self, onSuccess=None, onError=None, onProgress=None):
         necst = Promise()
         if self._state == "resolved":
             if str(type(onSuccess)) == "<class 'function'>":
                 def wrapper(resolver):
-                    try: resolver.resolve(onSuccess(self._answer))
+                    try:
+                        resolver.resolve(onSuccess(
+                            *self._answers,
+                            **self._kwanswers
+                        ))
                     except Exception as e: resolver.reject(e)
-                necst.execute(wrapper)
+                necst.solver(wrapper)
         elif self._state == "rejeted":
             if str(type(onError)) == "<class 'function'>":
                 def wrapper(resolver):
-                    try: resolver.resolve(onError(self._answer))
+                    try:
+                        resolver.resolve(onError(
+                            *self._answers,
+                            **self._kwanswers
+                        ))
                     except Exception as e: resolver.reject(e)
-                necst.execute(wrapper)
+                necst.solver(wrapper)
         else:
             if str(type(onSuccess)) == "<class 'function'>":
-                def onResolve(answer=None):
+                def onResolve(*args, **kw):
                     def wrapper(resolver):
-                        try: resolver.resolve(onSuccess(answer))
+                        try: resolver.resolve(onSuccess(*args, **kw))
                         except Exception as e: resolver.reject(e)
-                    necst.execute(wrapper)
+                    necst.solver(wrapper)
                 self._onResolve.append(onResolve)
             if str(type(onError)) == "<class 'function'>":
-                def onReject(answer=None):
+                def onReject(*args, **kw):
                     def wrapper(resolver):
-                        try: resolver.resolve(onError(answer))
+                        try: resolver.resolve(onError(*args, **kw))
                         except Exception as e: resolver.reject(e)
-                    necst.execute(wrapper)
+                    necst.solver(wrapper)
                 self._onReject.append(onReject)
             if str(type(onProgress)) == "<class 'function'>":
                 self._onProgress.append(onProgress)
@@ -118,7 +123,7 @@ class Promise(object):
             return self
         if self._state == "resolved":
             def wrapper():
-                callback(self._answer)
+                callback(*self._answers, **self._kwanswers)
             setTimeout(wrapper)
         else:
             self._onResolve.append(callback);
@@ -129,7 +134,7 @@ class Promise(object):
             return self
         if self._state == "rejected":
             def wrapper():
-                callback(self._answer)
+                callback(*self._answers, **self._kwanswers)
             setTimeout(wrapper)
         else:
             self._onReject.append(callback)
@@ -146,9 +151,7 @@ class Promise(object):
         if str(type(callback)) != "<class 'function'>":
             return self
         if self._state == "rejected" or self._state == "resolved":
-            def wrapper():
-                callback(self._answer)
-            setTimeout(wrapper)
+            setTimeout(lambda: callback(*self._answers, **self._kwanswers))
         else:
             self._onReject.append(callback)
             self._onResolve.append(callback)
