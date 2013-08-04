@@ -1,8 +1,14 @@
 # pyjsruntime
 
-A python module to code as in javascript
+A python module to code as in javascript.
+
+The goal is to use the power of the python language and libraries with the
+javascript runtime. Each context have a queue of function to execute. Empty
+contexts are deleted in order to let the memory free.
 
 ## Getting Started
+
+To run the first context, you have to run setTimeout once.
 
     from jsruntime import setTimeout, clearTimeout
 
@@ -28,6 +34,8 @@ A python module to code as in javascript
     setTimeout(main) # run main in another thread
 
 ## Use workers
+
+Each workers have their own context.
 
     from jsruntime import setTimeout, clearTimeout
     from workers import Worker
@@ -78,7 +86,7 @@ A python module to code as in javascript
         i = setInterval(show_activity, 1)
     setTimeout(main)
 
-## API
+## Provided functions
 
 - `setTimeout(function, timeout=0) -> ident`
 - `clearTimeout(ident)`
