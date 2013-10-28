@@ -58,33 +58,9 @@ Each workers have their own context.
 
 ## Use promises
 
-    from jsruntime import setTimeout, setInterval, clearInterval
-    from workers import Worker
-    from promises import Deferred
-
-    """Show dots every second. A worker waits for something typed and resolve
-    the promise with it. The typed message is shown and dots stop.
-    """
-
-    def promised_input():
-        deferred = Deferred()
-        def task(emitter):
-            emitter.postMessage(input())
-        def onMessage(emitter, message):
-            deferred.resolve(message)
-        w = Worker(task)
-        w.on('message', onMessage)
-        return deferred.promise()
-
-    def main():
-        def show_input_and_stop_dots(message):
-            print(message)
-            clearInterval(i)
-        def show_activity():
-            print('.')
-        promised_input().then(show_input_and_stop_dots)
-        i = setInterval(show_activity, 1)
-    setTimeout(main)
+You can create your own promises library like in javascript. See great promises
+libraries like [Task.js](http://taskjs.org/), or
+[RSVP.js](https://github.com/tildeio/rsvp.js).
 
 ## Provided functions
 
