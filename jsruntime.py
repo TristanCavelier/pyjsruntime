@@ -130,49 +130,20 @@ class JSRuntime(object):
     def clearInterval(self, i):
         return self.clearTimeout(i) # XXX
 
-    def setImmediate(self, callback, interval=0):
-        return self.setImmediateOn(self.getThreadName(), callback, interval)
+    def setImmediate(self, callback):
+        self.setImmediateOn(self.getThreadName(), callback)
 
-    def setImmediateOn(self, name, callback, interval):
-        def operate():
-            self._lock.acquire()
-            if self._contexts.get(name) is not None: # if context exists
-                self._contexts[name].append(i)
-            else: # if context does not exist
-                if self._callbacks.get(i) is not None: # if the callback exists
-                    self._contexts[name] = [i]
-                    self.start(name)
-            self._lock.release()
-
-        last = [time.time()]
-        timer = threading.Timer(
-            0,
-            operate
-        )
-
-        def wrapper():
-            self._lock.acquire()
-            if self._callbacks.get(i) is not None:
-                now = time.time()
-                timeout = interval - (now - last[0])
-                last[0] = now + (timeout % interval)
-                timer = threading.Timer(
-                    timeout if timeout >= 0 else 0,
-                    operate
-                )
-                self._callbacks[i]['timer'] = timer
-                timer.start()
-            self._lock.release()
-            callback()
-
+    def setImmediateOn(self, name, callback):
         self._lock.acquire()
-        i = self._addCallback(wrapper, timer, keep=True)
+        i = self._addCallback(callback, None)
+        if self._contexts.get(name) is not None: # if context exists
+            self._contexts[name].insert(0, i)
+        else: # if context does not exist
+            if self._callbacks.get(i) is not None: # if the callback exists
+                self._contexts[name] = [i]
+                self.start(name)
         self._lock.release()
-        timer.start()
         return i
-
-    def clearImmediate(self, i):
-        return self.clearTimeout(i) # XXX
 
     ############################################################################
     # # Not OK
@@ -276,7 +247,6 @@ except NameError:
     setInterval = _runtime.setInterval
     clearInterval = _runtime.clearInterval
     setImmediate = _runtime.setImmediate
-    clearImmediate = _runtime.clearImmediate
     del _runtime
 
 # if __name__ == '__main__':
