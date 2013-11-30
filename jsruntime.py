@@ -18,7 +18,6 @@
 
 import threading
 import time
-# import uuid
 
 """A Python module to code as in Javascript
 """
@@ -161,100 +160,6 @@ class JSRuntime(object):
         self._lock.release()
         return i
 
-    ############################################################################
-    # # Not OK
-
-    # def call(self, i, keep=False):
-    #     self._lock.acquire()
-    #     if self._callbacks.get(i) is not None:
-    #         if keep:
-    #             c = self._callback[i]
-    #         else:
-    #             c = self._callbacks.pop(i)
-    #         self._lock.release()
-    #         c()
-    #     else:
-    #         self._lock.release()
-
-    # def run(self, callback):
-    #     emitter_name = self.getEmitterName()
-    #     self._lock.acquire()
-    #     if self._contexts.get(emitter_name) is None:
-    #         self._contexts[emitter_name] = events.SafeEventEmitter(emitter_name)
-    #         self._contexts[emitter_name].on('call', self.call)
-    #     i = self.nextId()
-    #     self._callbacks[i] = callback
-    #     self._lock.release()
-    #     self._contexts[emitter_name].emit('call', i)
-
-    # def setTimeout(self, callback, timeout=0):
-    #     emitter_name = self.getEmitterName()
-    #     return self.setTimeoutOn(emitter_name, callback, timeout)
-
-    # def setTimeoutOn(self, name, callback, timeout):
-    #     self._lock.acquire()
-    #     i = self.nextId()
-    #     self._callbacks[i] = callback
-    #     self._lock.release()
-    #     if timeout >= 0:
-    #         threading.Timer(
-    #             timeout if timeout >= 0 else 0,
-    #             lambda: self._contexts[name].emitAsync('call', i)
-    #         ).start()
-    #     else:
-    #         self._contexts[name].emitAsync('call', i)
-    #     return i
-
-    # def clearTimeout(self, i):
-    #     del self._callbacks[i]
-
-    ############################################################################
-    # # OK
-
-    # def call(self, name, i, keep=False):
-    #     self._contexts[name].acquire()
-    #     self._lock.acquire()
-    #     if self._callbacks.get(i) is not None:
-    #         if keep:
-    #             c = self._callback[i]
-    #         else:
-    #             c = self._callbacks.pop(i)
-    #         self._lock.release()
-    #         c()
-    #     else:
-    #         self._lock.release()
-    #     self._contexts[name].release()
-
-    # def run(self, callback):
-    #     name = self.getThreadName()
-    #     self._lock.acquire()
-    #     if self._contexts.get(name) is None:
-    #         self._contexts[name] = threading.Lock()
-    #     i = self.nextId()
-    #     self._callbacks[i] = callback
-    #     self._lock.release()
-    #     self.call(name, i)
-
-    # def setTimeout(self, callback, timeout=0):
-    #     return self.setTimeoutOn(self.getThreadName(), callback, timeout)
-
-    # def setTimeoutOn(self, name, callback, timeout):
-    #     self._lock.acquire()
-    #     i = self.nextId()
-    #     self._callbacks[i] = callback
-    #     self._lock.release()
-    #     def timeoutCall():
-    #         time.sleep(timeout if timeout >= 0 else 0)
-    #         self.call(name, i)
-    #     threading.Thread(
-    #         target = timeoutCall,
-    #         name = name + "/" + str(uuid.uuid4())
-    #     ).start()
-    #     return i
-
-    # def clearTimeout(self, i):
-    #     del self._callbacks[i]
-
 try: setTimeout
 except NameError:
     _runtime = JSRuntime()
@@ -264,49 +169,3 @@ except NameError:
     clearInterval = _runtime.clearInterval
     setImmediate = _runtime.setImmediate
     del _runtime
-
-# if __name__ == '__main__':
-#     def tprint(*args):
-#         print(threading.current_thread().name, *args)
-#     # def begin():
-#     #     tprint('begin')
-#     #     def a():
-#     #         tprint('a')
-#     #         setTimeout(b, 1)
-#     #         time.sleep(1)
-#     #         i = setTimeout(b)
-#     #         clearTimeout(i)
-#     #         tprint('enda')
-#     #     def b():
-#     #         tprint('b')
-#     #         time.sleep(1)
-#     #         tprint('endb')
-#     #     setTimeout(a, 1)
-#     #     tprint('setTimeout')
-#     # setTimeout(begin)
-#     # tprint('end')
-
-#     def begin():
-#         tprint('begin')
-#         i = [0]
-#         def a():
-#             tprint('a')
-#             i[0] = setImmediate(b, 2)
-#         def b():
-#             tprint('b')
-#             time.sleep(1)
-#             tprint('endb')
-#         def c():
-#             clearImmediate(i[0])
-#         setTimeout(a, 1)
-#         setTimeout(c, 9)
-#         tprint('setTimeout')
-#         # threading.Timer(
-#         #     10,
-#         #     lambda: threading.Thread(
-#         #         target=lambda: setTimeout(a),
-#         #         name='MainThread'
-#         #     ).start()
-#         # ).start()
-#     setTimeout(begin)
-#     tprint('end')
