@@ -64,9 +64,9 @@ libraries like [Task.js](http://taskjs.org/), or
 
 ## Provided functions
 
-- `setTimeout(function, timeout=0) -> ident`
+- `setTimeout(function, [timeout]) -> ident`
 - `clearTimeout(ident)`
-- `setInterval(function, interval=0) -> ident`
+- `setInterval(function, [interval]) -> ident`
 - `clearInterval(ident)`
 - `setImmediate(function) -> None`
 

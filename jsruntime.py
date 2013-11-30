@@ -70,7 +70,8 @@ class JSRuntime(object):
             name = name # + "/" + str(uuid.uuid4())
         ).start()
 
-    def setTimeout(self, callback, timeout=0):
+    def setTimeout(self, callback, *args, **kwargs):
+        timeout = args[0] if len(args) > 0 else 0
         return self.setTimeoutOn(self.getThreadName(), callback, timeout)
 
     def setTimeoutOn(self, name, callback, timeout):
@@ -101,7 +102,8 @@ class JSRuntime(object):
             del self._callbacks[i]
         self._lock.release()
 
-    def setInterval(self, callback, interval=0):
+    def setInterval(self, callback, *args, **kwargs):
+        interval = args[0] if len(args) > 0 else 0
         return self.setIntervalOn(self.getThreadName(), callback, interval)
 
     def setIntervalOn(self, name, callback, interval):
