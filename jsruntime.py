@@ -19,7 +19,7 @@
 import threading
 import time
 
-"""A Python module to code as in Javascript
+"""A Python module to code as in Javascript runtime
 """
 
 class JSRuntime(object):
