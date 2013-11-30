@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# python2 or 3
 
 # Script to do some test for pyjsruntime
 # Copyright (C) 2013  Tristan Cavelier <t.cavelier@free.fr>
@@ -27,9 +28,9 @@ if __name__ == '__main__':
 
     last = [time.time()]
     def tprint(*args):
-        print(threading.current_thread().name, '\t(sleep',
-              str(time.time() - last[0])[:5],
-              'seconds)', '\t', *args)
+        print(threading.current_thread().name + '\t(sleep ' +
+              str(time.time() - last[0])[:5] +
+              ' seconds)\t' + ' '.join(args))
         last[0] = time.time()
 
     print("""Expected Output:
