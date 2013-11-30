@@ -72,4 +72,4 @@ libraries like [Task.js](http://taskjs.org/), or
 
 ## License
 
-MIT License
+GNU GPLv3
