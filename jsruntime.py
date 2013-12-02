@@ -43,15 +43,17 @@ class JSRuntime(object):
             if not c['keep']:
                 del self._callbacks[i]
             self._lock.release()
-            c['callback']()
+            c['callback'](*c['args'], **c['kwargs'])
             self._lock.acquire()
 
-    def _addCallback(self, callback, timer, keep=False):
+    def _addCallback(self, callback, timer, args, kwargs, keep=False):
         i = self._nextId()
         self._callbacks[i] = {
             'callback': callback,
             'keep': keep,
-            'timer': timer
+            'timer': timer,
+            'args': args,
+            'kwargs': kwargs
         }
         return i
 
@@ -72,9 +74,9 @@ class JSRuntime(object):
 
     def setTimeout(self, callback, *args, **kwargs):
         timeout = args[0] if len(args) > 0 else 0
-        return self.setTimeoutOn(self.getThreadName(), callback, timeout)
+        return self.setTimeoutOn(self.getThreadName(), callback, timeout, args[1:], kwargs)
 
-    def setTimeoutOn(self, name, callback, timeout):
+    def setTimeoutOn(self, name, callback, timeout, args, kwargs):
         def operate():
             self._lock.acquire()
             if self._contexts.get(name) is not None: # if context exists
@@ -89,7 +91,7 @@ class JSRuntime(object):
             operate
         )
         self._lock.acquire()
-        i = self._addCallback(callback, timer)
+        i = self._addCallback(callback, timer, args, kwargs)
         self._lock.release()
         timer.start()
         return i
@@ -104,9 +106,9 @@ class JSRuntime(object):
 
     def setInterval(self, callback, *args, **kwargs):
         interval = args[0] if len(args) > 0 else 0
-        return self.setIntervalOn(self.getThreadName(), callback, interval)
+        return self.setIntervalOn(self.getThreadName(), callback, interval, args[1:], kwargs)
 
-    def setIntervalOn(self, name, callback, interval):
+    def setIntervalOn(self, name, callback, interval, args, kwargs):
         def operate():
             self._lock.acquire()
             if self._contexts.get(name) is not None: # if context exists
@@ -139,7 +141,7 @@ class JSRuntime(object):
             callback()
 
         self._lock.acquire()
-        i = self._addCallback(wrapper, timer, keep=True)
+        i = self._addCallback(wrapper, timer, args, kwargs, keep=True)
         self._lock.release()
         timer.start()
         return i
@@ -147,12 +149,12 @@ class JSRuntime(object):
     def clearInterval(self, i):
         return self.clearTimeout(i) # XXX
 
-    def setImmediate(self, callback):
-        self.setImmediateOn(self.getThreadName(), callback)
+    def setImmediate(self, callback, *args, **kwargs):
+        self.setImmediateOn(self.getThreadName(), callback, args, kwargs)
 
-    def setImmediateOn(self, name, callback):
+    def setImmediateOn(self, name, callback, args, kwargs):
         self._lock.acquire()
-        i = self._addCallback(callback, None)
+        i = self._addCallback(callback, None, args, kwargs)
         if self._contexts.get(name) is not None: # if context exists
             self._contexts[name].insert(0, i)
         else: # if context does not exist

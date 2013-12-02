@@ -35,19 +35,19 @@ if __name__ == '__main__':
 
     print("""Expected Output:
     __main__ (sleep 0 s)   started
-    __main__ (sleep 0 s)   a
-    __main__ (sleep 1 s)   a
+    __main__ (sleep 0 s)   a one
+    __main__ (sleep 1 s)   a two
     __main__ (sleep 0.5 s) b
     """)
     def w():
         tprint('started')
         i = [0]
-        def a():
-            tprint('a')
-            i[0] = setTimeout(a, 1)
+        def a(ap):
+            tprint('a', ap)
+            i[0] = setTimeout(a, 1, 'two')
         def b():
             tprint('b')
             clearTimeout(i[0])
         setTimeout(b, 1.5)
-        a()
+        a('one')
     setTimeout(w)

@@ -64,11 +64,11 @@ libraries like [Task.js](http://taskjs.org/), or
 
 ## Provided functions
 
-- `setTimeout(function, [timeout]) -> ident`
+- `setTimeout(function, [timeout, *args, **kwargs]) -> ident`
 - `clearTimeout(ident)`
-- `setInterval(function, [interval]) -> ident`
+- `setInterval(function, [interval, *args, **kwargs]) -> ident`
 - `clearInterval(ident)`
-- `setImmediate(function) -> None`
+- `setImmediate(function, [*args, **kwargs]) -> None`
 
 ## License
 
