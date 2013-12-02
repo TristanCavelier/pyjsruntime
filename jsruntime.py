@@ -39,11 +39,15 @@ class JSRuntime(object):
 
     def _call(self, i):
         if self._callbacks.get(i) is not None:
-            c = self._callbacks[i]
-            if not c['keep']:
+            callback_dict = self._callbacks[i]
+            if not callback_dict['keep']:
                 del self._callbacks[i]
             self._lock.release()
-            c['callback'](*c['args'], **c['kwargs'])
+            callback = callback_dict['callback']
+            if isinstance(callback, str):
+                exec(callback)
+            else:
+                callback(*callback_dict['args'], **callback_dict['kwargs'])
             self._lock.acquire()
 
     def _addCallback(self, callback, timer, args, kwargs, keep=False):
