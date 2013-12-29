@@ -286,7 +286,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         if inspect.isfunction(handler):
             handler(*args, **kwargs)
         elif isinstance(handler, list):
-            listeners = [x for x in handler]
+            listeners = handler[:]
             for listeners in listeners:
                 listeners(*args, **kwargs)
 
@@ -310,7 +310,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
             return []
         if inspect.isfunction(self._events.get(event)):
             return [self._events[event]]
-        return [x for x in self._events[event]]
+        return self._events[event][:]
 
     @staticmethod
     def listener_count(emitter, event):
