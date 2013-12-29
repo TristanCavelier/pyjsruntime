@@ -287,8 +287,8 @@ Use emitter.set_max_listeners() to increase limit.\n""")
             handler(*args, **kwargs)
         elif isinstance(handler, list):
             listeners = handler[:]
-            for listeners in listeners:
-                listeners(*args, **kwargs)
+            for listener in listeners:
+                listener(*args, **kwargs)
 
         return True
 
