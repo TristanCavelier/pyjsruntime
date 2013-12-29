@@ -19,7 +19,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from jsruntime import setTimeout, setInterval, clearInterval
+from jsruntime import run, setInterval, clearInterval
 
 import time
 import threading
@@ -34,11 +34,11 @@ if __name__ == '__main__':
         last[0] = time.time()
 
     print("""Expected output:
-    __main__ (sleep 0 s) started
-    __main__ (sleep 1 s) a
-    __main__ (sleep 1 s) a
-    __main__ (sleep 1 s) a
-    __main__ (sleep 1 s) a
+    Thread-1 (sleep 0 s) started
+    Thread-3 (sleep 1 s) a
+    Thread-5 (sleep 1 s) a
+    Thread-7 (sleep 1 s) a
+    Thread-9 (sleep 1 s) a
     """)
     def w():
         tprint('started')
@@ -52,4 +52,4 @@ if __name__ == '__main__':
             else:
                 clearInterval(b)
         b = setInterval(a, 1)
-    setTimeout(w)
+    run(w)
