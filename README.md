@@ -10,7 +10,7 @@ contexts are deleted in order to let the memory free.
 
 To run the first context, you have to run setTimeout once.
 
-    from jsruntime import setTimeout, clearTimeout
+    from jsruntime import run, setTimeout, clearTimeout
 
     def main():
         def two():
@@ -31,30 +31,29 @@ To run the first context, you have to run setTimeout once.
 
         print(1)
 
-    setTimeout(main) # run main in another thread
+    run(main) # run main in another thread
 
 ## Use workers
 
 Each workers have their own context.
 
-    from jsruntime import setTimeout, clearTimeout
-    from workers import Worker
+    from jsruntime import run, on, postMessage, worker, setTimeout, clearTimeout
 
-    def task(emitter):
-        def onMessage(emitter, message):
+    def task():
+        def on_message(message):
             print("Worker recv:", message)
-            emitter.postMessage('Hello from worker!')
-        emitter.on('message', onMessage)
+            postMessage('Hello from worker!')
+        on('message', on_message)
 
     def main():
-        def onMessage(w, message):
+        def on_message(message):
             print("Main recv:", message)
-        w = Worker(task)
-        w.on('message', onMessage)
+        w = worker(task)
+        w.on('message', on_message)
         w.postMessage('Hello from main!')
         w.postMessage('Hello from main!')
 
-    setTimeout(main)
+    run(main)
 
 ## Use promises
 
@@ -64,11 +63,23 @@ libraries like [Task.js](http://taskjs.org/), or
 
 ## Provided functions
 
+First run
+
+- `run(function, [*args, **kwargs])`
+
+Event management
+
+- `on(event_name, listener) = add_listener(event_name, listener)`
+- `remove_listener(event_name, listener)`
+- `postMessage(message)`
+
+Timer management
+
 - `setTimeout(function, [timeout, *args, **kwargs]) -> ident`
 - `clearTimeout(ident)`
 - `setInterval(function, [interval, *args, **kwargs]) -> ident`
 - `clearInterval(ident)`
-- `setImmediate(function, [*args, **kwargs]) -> None`
+- `setImmediate(function, [*args, **kwargs])`
 
 ## License
 
