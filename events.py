@@ -74,7 +74,7 @@ class EventEmitter(object):
         if not inspect.isfunction(listener):
             raise TypeError('listener must be a function')
 
-        if not isinstance(self._events, dict):
+        if not isinstance(getattr(self, "_events", None), dict):
             self._events = {}
 
         # To avoid recursion in the case that event == "newListener"! Before
@@ -101,7 +101,7 @@ class EventEmitter(object):
         if isinstance(handler, list) and \
            (getattr(self, '_warned_events', None) is None or \
             self._warned_events.get(event) is None):
-            if self._max_listeners is not None:
+            if getattr(self, "_max_listeners", None) is not None:
                 m = self._max_listeners
             else:
                 m = EventEmitter.default_max_listeners
@@ -170,7 +170,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         if not inspect.isfunction(listener):
             raise TypeError('listener must be a function')
 
-        if not isinstance(self._events, dict) or \
+        if not isinstance(getattr(self, "_events", None), dict) or \
            self._events.get(event) is None:
             return self
 
@@ -210,7 +210,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         Arguments:
         - `*args`: [0] The event name (optional)
         """
-        if not isinstance(self._events, dict): return self
+        if not isinstance(getattr(self, "_events", None), dict): return self
 
         # not listening for removeListener, no need to emit
         if self._events.get('removeListener') is None:
@@ -267,7 +267,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         - `*args`: The supplied arguments
         - `**kwargs`: The supplied arguments
         """
-        if not isinstance(self._events, dict):
+        if not isinstance(getattr(self, "_events", None), dict):
             self._events = {}
 
         if event == "error":
@@ -305,7 +305,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         Arguments:
         - `event`: The event name
         """
-        if not isinstance(self._events, dict) or \
+        if not isinstance(getattr(self, "_events", None), dict) or \
            self._events.get(event) is None:
             return []
         if inspect.isfunction(self._events.get(event)):
@@ -316,7 +316,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
     def listener_count(emitter, event):
         """Return the number of listeners for a given event.
         """
-        if not isinstance(emitter._events, dict) or \
+        if not isinstance(getattr(emitter, "_events", None), dict) or \
            emitter._events.get(event) is None:
             return 0
         if inspect.isfunction(emitter._events.get(event)):
