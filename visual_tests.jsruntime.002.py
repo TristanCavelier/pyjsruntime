@@ -19,7 +19,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from jsruntime import run, setInterval, clearInterval
+from jsruntime import run, set_interval, clear_interval
 
 import time
 import threading
@@ -50,6 +50,6 @@ if __name__ == '__main__':
             if i[0] < 3:
                 i[0] += 1
             else:
-                clearInterval(b)
-        b = setInterval(a, 1)
+                clear_interval(b)
+        b = set_interval(a, 1)
     run(w)

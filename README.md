@@ -2,6 +2,8 @@
 
 A python module to code as in javascript.
 
+*Version 0.1.0*
+
 The goal is to use the power of the python language and libraries with the
 javascript runtime. Each context have a queue of function to execute. Empty
 contexts are deleted in order to let the memory free.
@@ -10,7 +12,7 @@ contexts are deleted in order to let the memory free.
 
 To run the first context, you have to run setTimeout once.
 
-    from jsruntime import run, setTimeout, clearTimeout
+    from jsruntime import run, set_timeout, clear_timeout
 
     def main():
         def two():
@@ -22,12 +24,12 @@ To run the first context, you have to run setTimeout once.
         def four():
             print(4)
 
-        setTimeout(two, 1)
+        set_timeout(two, 1)
 
-        i = setTimeout(three, 1)
-        clearTimeout(i)
+        i = set_timeout(three, 1)
+        clear_timeout(i)
 
-        setTimeout(four, 2)
+        set_timeout(four, 2)
 
         print(1)
 
@@ -37,12 +39,12 @@ To run the first context, you have to run setTimeout once.
 
 Each workers have their own context.
 
-    from jsruntime import run, on, postMessage, worker, setTimeout, clearTimeout
+    from jsruntime import run, on, post_message, worker, set_timeout, clear_timeout
 
     def task():
         def on_message(message):
             print("Worker recv:", message)
-            postMessage('Hello from worker!')
+            post_message('Hello from worker!')
         on('message', on_message)
 
     def main():
@@ -50,8 +52,8 @@ Each workers have their own context.
             print("Main recv:", message)
         w = worker(task)
         w.on('message', on_message)
-        w.postMessage('Hello from main!')
-        w.postMessage('Hello from main!')
+        w.post_message('Hello from main!')
+        w.post_message('Hello from main!')
 
     run(main)
 
@@ -71,15 +73,14 @@ Event management
 
 - `on(event_name, listener) = add_listener(event_name, listener)`
 - `remove_listener(event_name, listener)`
-- `postMessage(message)`
+- `post_message(message)`
 
 Timer management
 
-- `setTimeout(function, [timeout, *args, **kwargs]) -> ident`
-- `clearTimeout(ident)`
-- `setInterval(function, [interval, *args, **kwargs]) -> ident`
-- `clearInterval(ident)`
-- `setImmediate(function, [*args, **kwargs])`
+- `set_timeout(function, [timeout, *args, **kwargs]) -> ident`
+- `clear_timeout(ident)`
+- `set_interval(function, [interval, *args, **kwargs]) -> ident`
+- `clear_interval(ident)`
 
 ## License
 

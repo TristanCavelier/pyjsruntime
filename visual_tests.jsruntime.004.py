@@ -19,7 +19,7 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from jsruntime import run, worker, on, postMessage, setInterval, clearInterval
+from jsruntime import run, worker, on, post_message, set_interval, clear_interval
 
 import time
 import threading
@@ -62,22 +62,22 @@ if __name__ == '__main__':
         def a():
             tprint('a')
             time.sleep(0.5)
-            postMessage('hi from w again!')
+            post_message('hi from w again!')
             if i[0] < 3:
                 i[0] += 1
             else:
-                clearInterval(b)
-        b = setInterval(a, 1)
+                clear_interval(b)
+        b = set_interval(a, 1)
         time.sleep(0.05)
-        postMessage('hi from w!')
+        post_message('hi from w!')
     def main():
         wor = worker(w)
         def on_message(message):
             tprint('main message: ' + message)
         wor.on("message", on_message)
         time.sleep(0.2)
-        wor.postMessage('hello from main!')
+        wor.post_message('hello from main!')
         time.sleep(0.5)
-        wor.postMessage('hello from main again!')
+        wor.post_message('hello from main again!')
         time.sleep(0.1)
     run(main)
