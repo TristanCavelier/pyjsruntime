@@ -13,7 +13,6 @@
 from events import EventEmitter
 
 import threading
-import inspect
 import time
 #import sys
 import uuid
@@ -64,7 +63,7 @@ class JSScheduler(EventEmitter):
         threading.Timer(0, loop).start()
 
     # def set_immediate(self, action, *args, **kwargs):
-    #     if not inspect.isfunction(action):
+    #     if not callable(action):
     #         raise TypeError('action must be a function')
 
     #     self._lock.acquire()
@@ -77,7 +76,7 @@ class JSScheduler(EventEmitter):
     #     self._lock.release()
 
     def set_timeout(self, action, *args, **kwargs):
-        if not inspect.isfunction(action):
+        if not callable(action):
             raise TypeError('action must be a function')
 
         # get timeout
@@ -144,7 +143,7 @@ class JSScheduler(EventEmitter):
         self._lock.release()
 
     def set_interval(self, action, *args, **kwargs):
-        if not inspect.isfunction(action):
+        if not callable(action):
             raise TypeError('action must be a function')
 
         # get interval
@@ -355,7 +354,7 @@ class JSSchedulerManager(object):
         sched.set_timeout(wrapper, 0, *args, **kwargs)
 
     def _set_timer(self, timertype, action, *args, **kwargs):
-        if not inspect.isfunction(action):
+        if not callable(action):
             raise TypeError('action must be a function')
         # get scheduler
         self._lock.acquire()

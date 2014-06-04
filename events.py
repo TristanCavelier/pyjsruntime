@@ -31,7 +31,7 @@ Functions can then be attached to objects, to be executed when an event is
 emitted. These functions are called listeners.
 """
 
-import sys, inspect
+import sys
 
 class EventEmitter(object):
     """To access to EventEmitter class, `import EventEmitter from events`
@@ -63,7 +63,7 @@ class EventEmitter(object):
         - `event`: The event name
         - `listener`: The listener callback
         """
-        if not inspect.isfunction(listener):
+        if not callable(listener):
             raise TypeError('listener must be a function')
 
         if not isinstance(getattr(self, "_events", None), dict):
@@ -75,7 +75,7 @@ class EventEmitter(object):
             self.emit("newListener",
                       event,
                       listener.listener if \
-                      inspect.isfunction(getattr(listener, 'listener', None)) \
+                      callable(getattr(listener, 'listener', None)) \
                       else listener)
 
         if self._events.get(event) is None:
@@ -132,7 +132,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         - `event`: The event name
         - `listener`: The listener callback
         """
-        if not inspect.isfunction(listener):
+        if not callable(listener):
             raise TypeError('listener must be a function')
 
         def g(*args, **kwargs):
@@ -159,7 +159,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         - `event`: The event name
         - `listener`: The listener callback
         """
-        if not inspect.isfunction(listener):
+        if not callable(listener):
             raise TypeError('listener must be a function')
 
         if not isinstance(getattr(self, "_events", None), dict) or \
@@ -171,7 +171,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         position = -1
 
         if handler == listener or \
-           (inspect.isfunction(getattr(handler, 'listener', None)) == listener):
+           callable(getattr(handler, 'listener', None)) == listener:
             del self._events[event]
             if self._events.get('removeListener') is not None:
                 self.emit('removeListener', event, listener)
@@ -224,7 +224,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         event = args[0]
         listeners = self._events.get(event)
 
-        if inspect.isfunction(listeners):
+        if callable(listeners):
             self.remove_listener(event, listeners)
         else:
             # LIFO order
@@ -275,7 +275,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         if handler is None:
             return False
 
-        if inspect.isfunction(handler):
+        if callable(handler):
             handler(*args, **kwargs)
         elif isinstance(handler, list):
             listeners = handler[:]
@@ -300,7 +300,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         if not isinstance(getattr(self, "_events", None), dict) or \
            self._events.get(event) is None:
             return []
-        if inspect.isfunction(self._events.get(event)):
+        if callable(self._events.get(event)):
             return [self._events[event]]
         return self._events[event][:]
 
@@ -311,7 +311,7 @@ Use emitter.set_max_listeners() to increase limit.\n""")
         if not isinstance(getattr(emitter, "_events", None), dict) or \
            emitter._events.get(event) is None:
             return 0
-        if inspect.isfunction(emitter._events.get(event)):
+        if callable(emitter._events.get(event)):
             return 1
         return len(emitter._events[event])
 
